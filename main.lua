@@ -411,8 +411,22 @@ end
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(updateModuleList)
 
-CloseBtn.MouseEnter:Connect(function()
-    TweenService:Create(CloseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 70, 70)}):Play()
+CloseBtn.MouseButton1Click:Connect(function()
+    for fileName, _ in pairs(ModuleStates) do
+        for i = 1, 3 do
+            pcall(function()
+                if ModuleConnections[fileName] and ModuleConnections[fileName].stop then
+                    ModuleConnections[fileName].stop()
+                end
+            end)
+            task.wait(0.1)
+        end
+    end
+    
+    task.wait(0.3)
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+    task.wait(0.3)
+    HubGui:Destroy()
 end)
 
 CloseBtn.MouseLeave:Connect(function()
