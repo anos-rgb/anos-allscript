@@ -56,7 +56,7 @@
 
 ### Method 1: Direct Execute (Recommended)
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/anos-rgb/anos-script/main/main.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/anos-rgb/anos-allscript/main/main.lua"))()
 ```
 
 ### Method 2: Manual Download
