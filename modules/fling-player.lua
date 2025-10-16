@@ -5,7 +5,7 @@ local LocalPlayer = Players.LocalPlayer
 local Module = {}
 local connection
 local bodyAngularVelocity
-local spinPower = 5000
+local spinPower = 50000
 
 function Module.start()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -66,5 +66,6 @@ function Module.stop()
 end
 
 return Module
+
 
 
