@@ -1,10 +1,12 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Module = {}
 
 local connection
+local running = false
 local spamMessage = "ANOS SCRIPT HUB | github.com/anos-rgb"
 local spamDelay = 2
 local lastSent = 0
@@ -12,7 +14,18 @@ local lastSent = 0
 function Module.start()
     Module.stop()
     
-    connection = game:GetService("RunService").Heartbeat:Connect(function()
+    running = true
+    lastSent = 0
+    
+    connection = RunService.Heartbeat:Connect(function()
+        if not running then
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+            return
+        end
+        
         local currentTime = tick()
         if currentTime - lastSent < spamDelay then
             return
@@ -53,17 +66,6 @@ function Module.start()
             end)
         end
         
-        if not success then
-            pcall(function()
-                game.StarterGui:SetCore("ChatMakeSystemMessage", {
-                    Text = spamMessage,
-                    Color = Color3.fromRGB(255, 255, 255),
-                    Font = Enum.Font.SourceSansBold,
-                    FontSize = Enum.FontSize.Size24
-                })
-            end)
-        end
-        
         if success then
             lastSent = currentTime
         end
@@ -71,9 +73,30 @@ function Module.start()
 end
 
 function Module.stop()
+    running = false
+    lastSent = 0
+    
+    task.wait(0.1)
+    
     if connection then
-        connection:Disconnect()
+        pcall(function()
+            connection:Disconnect()
+        end)
         connection = nil
+    end
+    
+    for i = 1, 5 do
+        pcall(function()
+            for _, conn in pairs(getconnections(RunService.Heartbeat)) do
+                if conn.Function then
+                    local info = debug.getinfo(conn.Function)
+                    if info and info.source and (info.source:find("chat%-spam") or info.source:find("ANOS")) then
+                        conn:Disable()
+                    end
+                end
+            end
+        end)
+        task.wait(0.05)
     end
 end
 
