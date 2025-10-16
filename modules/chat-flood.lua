@@ -1,36 +1,133 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-
 local Module = {}
+
 local connection
+local running = false
+local lastSent = 0
+local floodDelay = 1
 
 local messages = {
     "halo",
-    "wkwk"
+    "wkwk",
+    "test",
+    "hello",
+    "nice"
 }
 
 function Module.start()
-    connection = game:GetService("RunService").Heartbeat:Connect(function()
-        local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-        
-        if chatRemote then
-            local sayMessageRequest = chatRemote:FindFirstChild("SayMessageRequest")
-            if sayMessageRequest then
-                local randomMsg = messages[math.random(1, #messages)]
-                sayMessageRequest:FireServer(randomMsg, "All")
+    Module.stop()
+    
+    running = true
+    lastSent = 0
+    
+    connection = RunService.Heartbeat:Connect(function()
+        if not running then
+            if connection then
+                connection:Disconnect()
+                connection = nil
             end
+            return
         end
         
-        wait(1)
+        local currentTime = tick()
+        if currentTime - lastSent < floodDelay then
+            return
+        end
+        
+        local randomMsg = messages[math.random(1, #messages)]
+        local success = false
+        
+        pcall(function()
+            if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+                local channel = TextChatService:FindFirstChild("TextChannels")
+                if channel then
+                    local generalChannel = channel:FindFirstChild("RBXGeneral")
+                    if generalChannel then
+                        generalChannel:SendAsync(randomMsg)
+                        success = true
+                    end
+                end
+            end
+        end)
+        
+        if not success then
+            pcall(function()
+                local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+                if chatRemote then
+                    local sayMessageRequest = chatRemote:FindFirstChild("SayMessageRequest")
+                    if sayMessageRequest and sayMessageRequest:IsA("RemoteEvent") then
+                        sayMessageRequest:FireServer(randomMsg, "All")
+                        success = true
+                    end
+                end
+            end)
+        end
+        
+        if not success then
+            pcall(function()
+                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(randomMsg, "All")
+                success = true
+            end)
+        end
+        
+        if success then
+            lastSent = currentTime
+        end
     end)
 end
 
 function Module.stop()
+    running = false
+    lastSent = 0
+    
+    task.wait(0.1)
+    
     if connection then
-        connection:Disconnect()
+        pcall(function()
+            connection:Disconnect()
+        end)
         connection = nil
     end
+    
+    for i = 1, 5 do
+        pcall(function()
+            for _, conn in pairs(getconnections(RunService.Heartbeat)) do
+                if conn.Function then
+                    local info = debug.getinfo(conn.Function)
+                    if info and info.source and (info.source:find("chat%-flood") or info.source:find("flood")) then
+                        conn:Disable()
+                    end
+                end
+            end
+        end)
+        task.wait(0.05)
+    end
+end
+
+function Module.addMessage(message)
+    if type(message) == "string" and #message > 0 then
+        table.insert(messages, message)
+    end
+end
+
+function Module.setMessages(messageList)
+    if type(messageList) == "table" and #messageList > 0 then
+        messages = messageList
+    end
+end
+
+function Module.setDelay(delay)
+    if type(delay) == "number" and delay > 0 then
+        floodDelay = delay
+    end
+end
+
+function Module.clearMessages()
+    messages = {}
 end
 
 return Module
