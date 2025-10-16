@@ -1,7 +1,7 @@
 # 🔥 ANOS SCRIPT HUB - Roblox Modular Script Collection
 
-![GitHub stars](https://img.shields.io/github/stars/anos-rgb/anos-script?style=social)
-![GitHub forks](https://img.shields.io/github/forks/anos-rgb/anos-script?style=social)
+![GitHub stars](https://img.shields.io/github/stars/anos-rgb/anos-allscript?style=social)
+![GitHub forks](https://img.shields.io/github/forks/anos-rgb/anos-allscript?style=social)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 **Koleksi script Roblox paling lengkap dengan 32 module berbeda!** Script ini dibuat modular, jadi lu bisa aktifin/matiin fitur sesuai kebutuhan tanpa lag atau crash.
