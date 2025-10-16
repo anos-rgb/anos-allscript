@@ -245,26 +245,44 @@ ScrollFrameCorner.CornerRadius = UDim.new(0, 8)
 ScrollFrameCorner.Parent = ScrollFrame
 
 local function createModuleButton(moduleName, fileName, yPos)
+    local btnContainer = Instance.new("Frame")
     local btn = Instance.new("TextButton")
     local btnCorner = Instance.new("UICorner")
+    local nameLabel = Instance.new("TextLabel")
     local statusLabel = Instance.new("TextLabel")
     
+    btnContainer.Name = fileName .. "_Container"
+    btnContainer.Parent = ScrollFrame
+    btnContainer.BackgroundTransparency = 1
+    btnContainer.Position = UDim2.new(0, 8, 0, yPos)
+    btnContainer.Size = UDim2.new(1, -24, 0, 55)
+    btnContainer.ZIndex = 3
+    
     btn.Name = fileName
-    btn.Parent = ScrollFrame
+    btn.Parent = btnContainer
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.BorderSizePixel = 0
-    btn.Position = UDim2.new(0, 8, 0, yPos)
-    btn.Size = UDim2.new(1, -24, 0, 55)
+    btn.Size = UDim2.new(1, 0, 1, 0)
     btn.Font = Enum.Font.GothamSemibold
-    btn.Text = moduleName
+    btn.Text = ""
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.TextSize = 16
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.TextXOffset = 15
     btn.ZIndex = 3
     
     btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = btn
+    
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = btn
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Position = UDim2.new(0, 15, 0, 0)
+    nameLabel.Size = UDim2.new(1, -85, 1, 0)
+    nameLabel.Font = Enum.Font.GothamSemibold
+    nameLabel.Text = moduleName
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 16
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.ZIndex = 4
     
     statusLabel.Name = "Status"
     statusLabel.Parent = btn
@@ -298,7 +316,7 @@ local function createModuleButton(moduleName, fileName, yPos)
         end
     end)
     
-    return btn
+    return btnContainer
 end
 
 function loadModule(fileName, button, moduleName)
@@ -317,8 +335,10 @@ function loadModule(fileName, button, moduleName)
                 ModuleConnections[fileName] = moduleReturn
                 moduleReturn.start()
                 
-                statusLabel.Text = "ON"
-                TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 200, 50)}):Play()
+                if statusLabel then
+                    statusLabel.Text = "ON"
+                    TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(50, 200, 50)}):Play()
+                end
                 
                 game:GetService("StarterGui"):SetCore("SendNotification", {
                     Title = "Module Loaded";
@@ -331,34 +351,43 @@ function loadModule(fileName, button, moduleName)
     
     if not success then
         warn("Failed to load module: " .. fileName)
-        statusLabel.Text = "ERR"
-        TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(150, 0, 0)}):Play()
+        if statusLabel then
+            statusLabel.Text = "ERR"
+            TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(150, 0, 0)}):Play()
+        end
     end
 end
 
 function stopModule(fileName, button)
     local statusLabel = button:FindFirstChild("Status")
     
-    if ModuleConnections[fileName] and ModuleConnections[fileName].stop then
-        ModuleConnections[fileName].stop()
-    end
+    pcall(function()
+        if ModuleConnections[fileName] and ModuleConnections[fileName].stop then
+            ModuleConnections[fileName].stop()
+        end
+    end)
     
     ModuleStates[fileName] = false
     ModuleConnections[fileName] = nil
     
-    statusLabel.Text = "OFF"
-    TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)}):Play()
+    if statusLabel then
+        statusLabel.Text = "OFF"
+        TweenService:Create(statusLabel, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)}):Play()
+    end
     
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Module Stopped";
-        Text = button.Text .. " deactivated!";
-        Duration = 3;
-    })
+    local nameLabel = button:FindFirstChild("NameLabel")
+    if nameLabel then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Module Stopped";
+            Text = nameLabel.Text .. " deactivated!";
+            Duration = 3;
+        })
+    end
 end
 
 function updateModuleList()
     for _, child in pairs(ScrollFrame:GetChildren()) do
-        if child:IsA("TextButton") then
+        if child:IsA("Frame") or child:IsA("TextButton") then
             child:Destroy()
         end
     end
@@ -391,11 +420,11 @@ end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     for fileName, _ in pairs(ModuleStates) do
-        if ModuleConnections[fileName] and ModuleConnections[fileName].stop then
-            pcall(function()
+        pcall(function()
+            if ModuleConnections[fileName] and ModuleConnections[fileName].stop then
                 ModuleConnections[fileName].stop()
-            end)
-        end
+            end
+        end)
     end
     
     TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)}):Play()
