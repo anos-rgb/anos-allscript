@@ -14,7 +14,7 @@ function Module.start()
                 humanoid.Sit = not humanoid.Sit
             end
         end
-        wait(0.2)
+        wait(0.9)
     end)
 end
 
