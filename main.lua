@@ -91,6 +91,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -275, 0.5, -325)
 MainFrame.Size = UDim2.new(0, 550, 0, 650)
 MainFrame.Active = true
+MainFrame.ClipsDescendants = true
 MainFrame.ZIndex = 1
 
 UICorner.CornerRadius = UDim.new(0, 12)
@@ -443,10 +444,19 @@ end)
 local minimized = false
 MinimizeBtn.MouseButton1Click:Connect(function()
     if minimized then
+        MainFrame.ClipsDescendants = true
         TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 550, 0, 650)}):Play()
+        task.wait(0.1)
+        SearchBox.Visible = true
+        CategoryFrame.Visible = true
+        ScrollFrame.Visible = true
         MinimizeBtn.Text = "−"
         minimized = false
     else
+        SearchBox.Visible = false
+        CategoryFrame.Visible = false
+        ScrollFrame.Visible = false
+        MainFrame.ClipsDescendants = true
         TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 550, 0, 60)}):Play()
         MinimizeBtn.Text = "+"
         minimized = true
