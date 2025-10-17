@@ -6,6 +6,8 @@ local Module = {}
 local connection
 local characterAddedConnection
 local blockPart
+local bodyVelocity
+local bodyGyro
 local running = false
 
 function Module.start()
@@ -15,6 +17,10 @@ function Module.start()
     
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local rootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
     
     if blockPart then
         blockPart:Destroy()
@@ -26,10 +32,23 @@ function Module.start()
     blockPart.Transparency = 0.7
     blockPart.Anchored = false
     blockPart.CanCollide = true
+    blockPart.Massless = true
     blockPart.BrickColor = BrickColor.new("Really red")
     blockPart.Material = Enum.Material.ForceField
     blockPart.CFrame = rootPart.CFrame
     blockPart.Parent = workspace
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
+    bodyVelocity.P = 10000
+    bodyVelocity.Parent = rootPart
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+    bodyGyro.P = 10000
+    bodyGyro.D = 500
+    bodyGyro.Parent = rootPart
     
     local weld = Instance.new("WeldConstraint")
     weld.Name = "BodyBlockWeld"
@@ -40,6 +59,7 @@ function Module.start()
     for _, part in pairs(character:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CanCollide = false
+            part.Massless = true
         end
     end
     
@@ -52,10 +72,23 @@ function Module.start()
             return
         end
         
-        if blockPart and blockPart.Parent and rootPart and rootPart.Parent then
-            blockPart.CFrame = rootPart.CFrame
-            blockPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            blockPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        if character and character.Parent and rootPart and rootPart.Parent then
+            if blockPart and blockPart.Parent then
+                blockPart.CFrame = rootPart.CFrame
+                blockPart.Velocity = Vector3.new(0, 0, 0)
+                blockPart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+            
+            rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+            
+            if bodyVelocity then
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            end
+            
+            if bodyGyro then
+                bodyGyro.CFrame = rootPart.CFrame
+            end
         else
             if blockPart then
                 blockPart:Destroy()
@@ -73,9 +106,21 @@ function Module.start()
         
         character = newChar
         rootPart = newChar:WaitForChild("HumanoidRootPart")
+        humanoid = newChar:WaitForChild("Humanoid")
+        
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
         
         if blockPart then
             blockPart:Destroy()
+        end
+        
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+        
+        if bodyGyro then
+            bodyGyro:Destroy()
         end
         
         blockPart = Instance.new("Part")
@@ -84,10 +129,23 @@ function Module.start()
         blockPart.Transparency = 0.7
         blockPart.Anchored = false
         blockPart.CanCollide = true
+        blockPart.Massless = true
         blockPart.BrickColor = BrickColor.new("Really red")
         blockPart.Material = Enum.Material.ForceField
         blockPart.CFrame = rootPart.CFrame
         blockPart.Parent = workspace
+        
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
+        bodyVelocity.P = 10000
+        bodyVelocity.Parent = rootPart
+        
+        bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+        bodyGyro.P = 10000
+        bodyGyro.D = 500
+        bodyGyro.Parent = rootPart
         
         local weld = Instance.new("WeldConstraint")
         weld.Name = "BodyBlockWeld"
@@ -98,6 +156,7 @@ function Module.start()
         for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
+                part.Massless = true
             end
         end
     end)
@@ -122,6 +181,20 @@ function Module.stop()
         characterAddedConnection = nil
     end
     
+    if bodyVelocity then
+        pcall(function()
+            bodyVelocity:Destroy()
+        end)
+        bodyVelocity = nil
+    end
+    
+    if bodyGyro then
+        pcall(function()
+            bodyGyro:Destroy()
+        end)
+        bodyGyro = nil
+    end
+    
     if blockPart then
         pcall(function()
             blockPart:Destroy()
@@ -131,9 +204,23 @@ function Module.stop()
     
     local character = LocalPlayer.Character
     if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid then
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        end
+        
+        if rootPart then
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+        end
+        
         for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
                 part.CanCollide = true
+                part.Massless = false
             end
         end
     end
